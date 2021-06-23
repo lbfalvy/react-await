@@ -73,8 +73,24 @@ const TestCases: (() => React.ReactElement)[] = [
             </Await>
             <PromiseControl resolve={res1} reject={rej1} />
         </>
+    },
+    () => {
+        const [_, reload] = React.useReducer(_ => [], [])
+        const [value, increment] = React.useReducer(i => i+1, 0)
+        const [value2, increment2] = React.useReducer(i => i+1, 0)
+        const cnt = mycnt++
+        return <>
+            <p>Await with an async obtainer with a dependency, cnt={cnt}</p>
+            <Await for={ShowString} s='test' obtainT={[() => {
+                increment2()
+                return Promise.resolve(value)
+            }, value]} u={`Obtainer function ran ${value2} times, cnt=${cnt}`} />
+            <button onClick={increment}>Increment counter</button>
+            <button onClick={reload}>Refresh component</button>
+        </>
     }
 ]
+let mycnt = 0;
 
 const ShowString = ({ s, t, u }: { s: string, t: string, u: string }) => <>{s};{t};{u}</>
 const TestWithChildren = ({ s, children }: {s: string, children: React.ReactNode }) => <>
@@ -83,9 +99,12 @@ const TestWithChildren = ({ s, children }: {s: string, children: React.ReactNode
 
 function usePromise(): [Promise<string>, (s: string) => void, (e: any) => void] {
     let resolve!: (v: string) => void, reject!: (e: string) => void
-    const promise = new Promise<string>((res, rej) => {
-        resolve = res
-        reject = rej
+    const [promise] = React.useState(() => {
+        console.log('A new promise was born!')
+        return new Promise<string>((res, rej) => {
+            resolve = res
+            reject = rej
+        })
     })
     return [promise, resolve, reject]
 }

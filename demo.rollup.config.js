@@ -43,7 +43,7 @@ export default {
             tsconfigOverride: {
                 strict: false
             },
-            inlineSourceMap: true
+            sourceMap: true
         })
     ]
 }

@@ -1,13 +1,15 @@
 import React from "react"
 import divide from "./divide"
 
+let counter = 0
+
 /**
  * A hook that imitates Promise.all in React.
  * @param collection Array of things to await
  * @returns Ready items and ready state
  */
 export default function useAwaitAll<T>(collection: (T | Promise<T>)[]): [T[], 'ready' | 'pending' | 'failed'] {
-    const [results, setResults] = React.useState<(T | undefined)[] | 'pending' | 'failed'>('pending')
+    const [results, setResults] = React.useState<T[] | 'pending' | 'failed'>('pending')
     const cache = React.useRef<Map<Promise<T>, T>>(new Map())
     const newCache = new Map()
     // Resolve unchanged promises from cache, also establish the new cache
@@ -23,13 +25,17 @@ export default function useAwaitAll<T>(collection: (T | Promise<T>)[]): [T[], 'r
     const [pending, given] = divide<Promise<T>, T>(collection,
         (e): e is Promise<T> => e instanceof Promise,
         true)
+    if (counter++ > 1000) throw new Error(`We've seen enough`)
+    console.log('pending', pending)
     React.useEffect(() => {
-        // Resolve only if the current 'pending' table is still up to date
+        if (pending.length) setResults('pending')
+        // Promise is discarded on change
         const promise = Promise.all(pending)
         let stale = false
         promise.then(result => {
             if (stale) return
-            setResults(result)
+            // Include given
+            setResults(result.map((el, i) => (el !== undefined ? el : given[i]) as T))
             pending.forEach((p, i) => {
                 if (p !== undefined) cache.current.set(p, result[i] as T)
             })
@@ -37,10 +43,11 @@ export default function useAwaitAll<T>(collection: (T | Promise<T>)[]): [T[], 'r
             if (!stale) setResults('failed')
         })
         return () => { stale = true }
-    }, [pending.length, ...pending])
-    if (results instanceof Array) return [
-        results.map((el, i) => (el !== undefined ? el : given[i]) as T),
-        'ready'
-    ]
+    }, [collection.length, ...collection])
+    // If pending is empty, return given
+    if (pending.every(v => v === undefined)) return [given as T[], 'ready']
+    // If pending is not empty and we have results, return them
+    if (results instanceof Array) return [results, 'ready']
+    // Otherwise return what we have and the status
     return [given.filter((x): x is T => x !== undefined), results]
 }

@@ -1,6 +1,6 @@
 {
   "name": "@lbfalvy/react-await",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A higher-order component to await all props before rendering your component",
   "main": "build/index.js",
   "module": "build/index.esm.js",

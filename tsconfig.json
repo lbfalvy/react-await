@@ -9,7 +9,6 @@
         "jsx": "react",
         "esModuleInterop": true,
         "sourceMap": true,
-        "inlineSources": true,
         "alwaysStrict": true,
         "skipLibCheck": true,
         "declaration": true,
