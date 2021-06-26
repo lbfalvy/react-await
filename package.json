@@ -1,6 +1,6 @@
 {
   "name": "@lbfalvy/react-await",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "A higher-order component to await all props before rendering your component",
   "main": "build/index.js",
   "module": "build/index.esm.js",
@@ -13,6 +13,9 @@
   "repository": "https://github.com/lbfalvy/react-await.git",
   "homepage": "https://github.com/lbfalvy/react-await",
   "license": "MIT",
+  "files": [
+    "build"
+  ],
   "dependencies": {
     "react": "17",
     "react-is": "^17.0.2"
