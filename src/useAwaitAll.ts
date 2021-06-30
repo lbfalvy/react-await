@@ -6,7 +6,7 @@ import divide from "./divide"
  * @param collection Array of things to await
  * @returns Ready items and ready state
  */
-export default function useAwaitAll<T>(collection: (T | Promise<T>)[]): [T[], 'ready' | 'pending' | 'failed'] {
+export default function useAwaitAll<T>(collection: (T | Promise<T>)[], keepLast = true): [T[], 'ready' | 'pending' | 'failed'] {
     const [results, setResults] = React.useState<T[] | 'pending' | 'failed'>('pending')
     const cache = React.useRef<Map<Promise<T>, T>>(new Map())
     const newCache = new Map()
@@ -24,7 +24,7 @@ export default function useAwaitAll<T>(collection: (T | Promise<T>)[]): [T[], 'r
         (e): e is Promise<T> => e instanceof Promise,
         true)
     React.useEffect(() => {
-        if (pending.length) setResults('pending')
+        if (pending.length && !keepLast) setResults('pending')
         // Promise is discarded on change
         const promise = Promise.all(pending)
         let stale = false

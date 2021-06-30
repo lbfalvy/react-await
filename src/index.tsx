@@ -116,9 +116,11 @@ export const Await = React.forwardRef(function Await<T, Ref>(
     ) as [(Entry<T> | Promise<Entry<T>>)[], any]
     // Caching happens by position so this can fail if you manage to rename a prop while
     // passing the same value, provided that you don't change the order of assignment.
+    // This is not documented because such a situation cannot really emerge if you use
+    // React sensibly.
     // TODO eliminate or simplify this preprocessing step by modifying useAwaitAll
     // Await all the promises in the result (also these are cached.)
-    const [results, status] = useAwaitAll(entryPromises)
+    const [results, status] = useAwaitAll(entryPromises, false)
     const finalProps = Object.fromEntries(results) as Partial<T>
     const ctx = React.useContext(awaitContext)
     if (status == 'failed') {
