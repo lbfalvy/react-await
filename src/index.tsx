@@ -89,13 +89,13 @@ function executeObtainers(entries: [string, any][]): [[string, any][], () => voi
     ], reload]
 }
 
-type AwaitRef<T> = { reload: () => void } | T & { reload: () => void }
+export type AwaitRef<T> = { reload: () => void } | T & { reload: () => void }
 
 /**
  * Deal with promises in React the easy way
  */
 export const Await = React.forwardRef(function Await<T, Ref>(
-    props: AwaitProps<T>, ref: React.Ref<AwaitRef<Ref>>
+    props: AwaitProps<T>, ref?: React.Ref<AwaitRef<Ref> | null | undefined> | null | undefined
 ): React.ReactElement {
     const _props = Object.assign({}, props)
     if ('children' in _props && _props.children && 'with' in _props.children)
@@ -142,7 +142,7 @@ export const Await = React.forwardRef(function Await<T, Ref>(
         // and imperative handles which are meant to be disposable objects that collect functions.
     } : null} reload={reload} {...finalProps as T} />
 }) as <T, Ref = {}>(
-    props: AwaitProps<T> & { ref?: React.Ref<AwaitRef<Ref>> }
+    props: AwaitProps<T> & { ref?: React.Ref<AwaitRef<Ref> | null | undefined> | null | undefined }
 ) => React.ReactElement
 
 export const awaitContext = React.createContext({

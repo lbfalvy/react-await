@@ -1,4 +1,4 @@
-import { Await } from '../src/index'
+import { Await, AwaitRef } from '../src/index'
 import ReactDOM from 'react-dom'
 import React from 'react'
 
@@ -88,13 +88,29 @@ const TestCases: (() => React.ReactElement)[] = [
             <button onClick={increment}>Increment counter</button>
             <button onClick={reload}>Refresh component</button>
         </>
+    },
+    () => {
+        const ref = React.useRef<AwaitRef<unknown>>()
+        const [value, increment] = React.useReducer(i => i+1, 0)
+        return <>
+            <p>Await but it can be reloaded from both the outside and inside</p>
+            <Await ref={ref} for={TestWithReload} s={`outer counter at ${value}`} obtainT={[() => {
+                return `Function called ${mycnt2++} times`
+            }]} />
+            <button onClick={() => ref.current?.reload()}>Ref reload</button>
+            <button onClick={increment}>Increment outer counter (rerender)</button>
+        </>
     }
 ]
 let mycnt = 0;
+let mycnt2 = 0;
 
 const ShowString = ({ s, t, u }: { s: string, t: string, u: string }) => <>{s};{t};{u}</>
 const TestWithChildren = ({ s, children }: {s: string, children: React.ReactNode }) => <>
     {s};{children}
+</>
+const TestWithReload = ({ s, t, reload }: { s: string, t: string, reload: () => void }) => <>
+    {s};{t};<button onClick={reload}>Prop reload</button>
 </>
 
 function usePromise(): [Promise<string>, (s: string) => void, (e: any) => void] {
