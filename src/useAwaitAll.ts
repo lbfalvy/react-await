@@ -1,8 +1,6 @@
 import React from "react"
 import divide from "./divide"
 
-let counter = 0
-
 /**
  * A hook that imitates Promise.all in React.
  * @param collection Array of things to await
@@ -25,8 +23,6 @@ export default function useAwaitAll<T>(collection: (T | Promise<T>)[]): [T[], 'r
     const [pending, given] = divide<Promise<T>, T>(collection,
         (e): e is Promise<T> => e instanceof Promise,
         true)
-    if (counter++ > 1000) throw new Error(`We've seen enough`)
-    console.log('pending', pending)
     React.useEffect(() => {
         if (pending.length) setResults('pending')
         // Promise is discarded on change

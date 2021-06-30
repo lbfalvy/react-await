@@ -119,7 +119,6 @@ export const Await = React.forwardRef(function Await<T, Ref>(
     // TODO eliminate or simplify this preprocessing step by modifying useAwaitAll
     // Await all the promises in the result (also these are cached.)
     const [results, status] = useAwaitAll(entryPromises)
-    console.log('results', results, 'status', status)
     const finalProps = Object.fromEntries(results) as Partial<T>
     const ctx = React.useContext(awaitContext)
     if (status == 'failed') {
