@@ -32,6 +32,11 @@ For a parameter called `foo`, the following variants are accepted:
 - An array containing a function on the 0th position followed by its
   dependencies, under the name `obtainFoo`.
 
+The above rules can also be applied to the `for` prop. In addition, if
+`for` turns out to be an object with the property `default`, that property
+is used instead. This serves to make code-splitting with ES modules
+easier.
+
 WARNING: these are directly mapped to useCallback, so never under any
 circumstances switch a prop between obtainer form and other forms between
 renders, as doing so violates the rules of hooks.
@@ -50,7 +55,8 @@ want relayed to `with`, but most of the time the default should just work.
 
 ```tsx
 <Await for={MyComponent} one={1} obtainTwo={[() => api.getTwo(), api]} three={globalFuncGet3} />
-<Await obtainFor={[() => import('./MyComponent.mjs').then(m => m.default)]} />
+<Await obtainFor={[() => import('./MyComponent.mjs')]} />
+<Await obtainFor={[() => customFetchComponent('MyComponent')]} />
 <Await for={MyComponent}>some children</Await>
 <Await for={MyComponent}>{{
   with: <>some children</>

@@ -20,14 +20,16 @@ type ApplyPropTransform<T> = { // Contravariance hack
     [P in string & keyof T]: (k: infer I) => void
 }[string & keyof T] ? I : never
 
+type Component<T> =
+    | React.ComponentType<T>
+    | { default: React.ComponentType<T> }
+
 // The props to be passed.
 export type AwaitProps<T> =
     & ({
-        for: React.ComponentType<T> | Thenable<React.ComponentType<T>>
+        for: Component<T> | Thenable<Component<T>>
     } | {
-        obtainFor: Obtainer<
-            React.ComponentType<T> | Thenable<React.ComponentType<T>>
-        >
+        obtainFor: Obtainer<Component<T> | Thenable<Component<T>>>
     })
     // Transform the props except children
     // reload is forced optional if present
@@ -36,21 +38,28 @@ export type AwaitProps<T> =
         & ('reload' extends keyof T ? { reload?: T['reload'] } : {})
     >
     // Children is a special case to avoid nested XML tags if it isn't obtained.
-    & ('children' extends keyof T ? ({
-        children?:
-            | T['children'] | Thenable<T['children']>
-            | {
-                with?: T['children'] | Thenable<T['children']>
+    & ('children' extends keyof T ? (
+        | {
+            children?:
+                | T['children']
+                | Thenable<T['children']>
+                | {
+                    with?: T['children'] | Thenable<T['children']>
+                    loader?: React.ReactNode
+                    error?: React.ReactNode
+                }
+        }
+        | {
+            obtainChildren: Obtainer<
+                | T['children']
+                | Thenable<T['children']>
+            >
+            children?: T['children'] & {
                 loader?: React.ReactNode
                 error?: React.ReactNode
             }
-    } | {
-        obtainChildren: Obtainer<T['children'] | Thenable<T['children']>>
-        children?: T['children'] & {
-            loader?: React.ReactNode
-            error?: React.ReactNode
         }
-    }) : {
+    ) : {
         children?: {
             loader?: React.ReactNode
             error?: React.ReactNode
@@ -103,6 +112,7 @@ function getName(props: any): string {
         || typeof props.for == 'object'
     ) {
         const name = props.for.displayName ?? props.for.name
+            ?? props.for.default?.displayName ?? props.for.default?.name
         if (typeof name == 'string') return name
     }
     return 'component'
@@ -146,9 +156,16 @@ export const Await = React.forwardRef(function Await<T, Ref>(
     // (also these are cached.)
     const [results, status] = useAwaitAll(entryPromises, true)
     const allAvailable = Object.fromEntries(results) as any
-    const { for: Component, ...finalProps } = allAvailable as {
-        for: React.ComponentType<T>
+    let { for: component, ...finalProps } = allAvailable as {
+        for: Component<T>
     }
+    try {
+    const Component: React.ComponentType<T> | undefined =
+        typeof component == 'object' // not a function component
+        && !(component instanceof React.Component) // nor class component
+        && 'default' in component // has a default member
+        ? component.default
+        : component as React.ComponentType<T>
     const ctx = React.useContext(awaitContext)
     if (status == 'failed') {
         if (props.children && 'error' in props.children)
@@ -180,6 +197,10 @@ export const Await = React.forwardRef(function Await<T, Ref>(
         // are Node, ReactComponent and imperative handles which are meant
         // to be disposable objects that collect functions.
     } : null} reload={reload} {...finalProps as T} />
+    } catch(ex) {
+        console.log(props, allAvailable)
+        throw ex
+    }
 }) as any as <T, Ref = {}>(
     props: AwaitProps<T> & {
         ref?: React.Ref<

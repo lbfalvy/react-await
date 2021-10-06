@@ -1,6 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Async obtainer for component 1`] = `"foo"`;
+exports[`Async obtainer for component in module 1`] = `"foo"`;
+
+exports[`Async obtainer for component plain 1`] = `"foo"`;
 
 exports[`children obtained 1`] = `
 Array [

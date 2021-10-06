@@ -126,9 +126,17 @@ describe('reload', () => {
   })
 })
 
-test('Async obtainer for component', () => {
-  const [promise, resolve, reject] = when<(props: { s: string }) => React.ReactElement>()
-  const component = renderer.create(<Await obtainFor={[() => promise]} s='foo' />)
-  act(() => resolve(ShowString))
-  expect(component.toJSON()).toMatchSnapshot()
+describe('Async obtainer for component', () => {
+  test('plain', () => {
+    const [promise, resolve, reject] = when<(props: { s: string }) => React.ReactElement>()
+    const component = renderer.create(<Await obtainFor={[() => promise]} s='foo' />)
+    act(() => resolve(ShowString))
+    expect(component.toJSON()).toMatchSnapshot()
+  })
+  test('in module', () => {
+    const [promise, resolve, reject] = when<{ default: (props: { s: string }) => React.ReactElement }>()
+    const component = renderer.create(<Await obtainFor={[() => promise]} s='foo' />)
+    act(() => resolve({ default: ShowString }))
+    expect(component.toJSON()).toMatchSnapshot()
+  })
 })
