@@ -1,0 +1,68 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Async obtainer for component 1`] = `"foo"`;
+
+exports[`children obtained 1`] = `
+Array [
+  "foo",
+  ";",
+  "bar",
+]
+`;
+
+exports[`children plain 1`] = `
+Array [
+  "foo",
+  ";",
+  "bar",
+]
+`;
+
+exports[`children promise 1`] = `
+<div
+  className="await await-loading"
+>
+  Loading 
+  Children
+  ...
+</div>
+`;
+
+exports[`children promise 2`] = `
+Array [
+  "foo",
+  ";",
+  "bar",
+]
+`;
+
+exports[`children with custom loader 1`] = `"waiting for data..."`;
+
+exports[`children with custom loader 2`] = `
+Array [
+  "foo",
+  ";",
+  "bar",
+]
+`;
+
+exports[`obtainer asynchronous 1`] = `"foo"`;
+
+exports[`obtainer synchronous without dependencies 1`] = `"foo"`;
+
+exports[`only given properties 1`] = `"foo"`;
+
+exports[`promise rejects 1`] = `
+<div
+  className="await await-failed"
+>
+  Failed to load 
+  ShowString
+</div>
+`;
+
+exports[`promise resolves 1`] = `"bar"`;
+
+exports[`reload externally 1`] = `"3"`;
+
+exports[`reload internally 1`] = `"3"`;

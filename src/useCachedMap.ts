@@ -17,11 +17,11 @@ function applyWithCache<T, U>(input: ReadonlyArray<T>, map: (v: T, index: number
     cache.splice(start, deleted, ...new Array(added))
     // Perform the lookup/mapping
     return input.map((t, i) => {
-        let value: U
-        if (cache[i] && cache[i][0] === t) value = cache[i][1]
-        else value = map(t, i)
-        cache[i] = [t, value]
-        return value
+        let u: U
+        if (cache[i] && cache[i][0] === t) u = cache[i][1]
+        else u = map(t, i)
+        cache[i] = [t, u]
+        return u
     })
 }
 

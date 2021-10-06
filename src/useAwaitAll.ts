@@ -1,15 +1,15 @@
+import { Thenable, when } from "@lbfalvy/when"
 import React from "react"
-import divide from "./divide"
 
 /**
  * A hook that imitates Promise.all in React.
  * @param collection Array of things to await
  * @returns Ready items and ready state
  */
-export default function useAwaitAll<T>(collection: (T | Promise<T>)[], keepLast = true): [T[], 'ready' | 'pending' | 'failed'] {
+export default function useAwaitAll<T>(collection: (T | Thenable<T>)[], keepLast = true): [T[], 'ready' | 'pending' | 'failed'] {
     const [results, setResults] = React.useState<T[] | 'pending' | 'failed'>('pending')
-    const cache = React.useRef<Map<Promise<T>, T>>(new Map())
-    const newCache = new Map()
+    const cache = React.useRef<WeakMap<Thenable<T>, T>>(new WeakMap())
+    const newCache = new WeakMap()
     // Resolve unchanged promises from cache, also establish the new cache
     collection = collection.map(el => {
         if (el instanceof Promise && cache.current.has(el)) {
@@ -19,31 +19,27 @@ export default function useAwaitAll<T>(collection: (T | Promise<T>)[], keepLast 
         } else return el
     })
     cache.current = newCache
-    // Separate promises and reals
-    const [pending, given] = divide<Promise<T>, T>(collection,
-        (e): e is Promise<T> => e instanceof Promise,
-        true)
+    const promise = React.useMemo(() => when.all(collection), [collection.length, ...collection])
+    promise.catch(() => {})
+    // Check if there are no promises
+    const allGiven = !collection.some(e => e instanceof Promise)
     React.useEffect(() => {
-        if (pending.length && !keepLast) setResults('pending')
-        // Promise is discarded on change
-        const promise = Promise.all(pending)
-        let stale = false
+        if (!allGiven && !keepLast) setResults('pending')
         promise.then(result => {
-            if (stale) return
             // Include given
-            setResults(result.map((el, i) => (el !== undefined ? el : given[i]) as T))
-            pending.forEach((p, i) => {
-                if (p !== undefined) cache.current.set(p, result[i] as T)
+            setResults(result)
+            collection.forEach((p, i) => {
+                if (p instanceof Promise) cache.current.set(p, result[i])
             })
-        }, () => {
-            if (!stale) setResults('failed')
-        })
-        return () => { stale = true }
-    }, [collection.length, ...collection])
-    // If pending is empty, return given
-    if (pending.every(v => v === undefined)) return [given as T[], 'ready']
-    // If pending is not empty and we have results, return them
+        }, e => {
+            setResults('failed')
+        }, 'sync')
+        return () => { promise.cancel() }
+    }, [promise, collection.length, ...collection])
+    // If there were no promises, return the input.
+    if (allGiven) return [collection as T[], 'ready']
+    // If there were promises and we have results, return them
     if (results instanceof Array) return [results, 'ready']
     // Otherwise return what we have and the status
-    return [given.filter((x): x is T => x !== undefined), results]
+    return [collection.filter((x): x is T => !(x instanceof Promise)), results]
 }
