@@ -1,18 +1,17 @@
-import { Thenable, when } from '@lbfalvy/when'
+import * as xpromise from '@lbfalvy/when'
 import React from 'react'
 import { isForwardRef, isLazy, isMemo } from 'react-is'
-import divide from './divide'
-import useAwaitAll from './useAwaitAll'
-import useCachedMap from './useCachedMap'
-import useChangingHandle from './useChangingHandle'
-import { unzip, zip } from './zip'
+import { divide, unzip, zip } from '@lbfalvy/array-utils'
+import { useAwaitAll } from './useAwaitAll'
+import { useCachedMap } from './useCachedMap'
+import { useChangingHandle } from './useChangingHandle'
 
 type Obtainer<T> = (() => T) | [() => T, ...any[]]
 
 type SelfPromiseOrObtainer<T, Key extends keyof T> = 
-    | & { [P in Key]: Thenable<T[Key]> | T[Key] }
+    | & { [P in Key]: xpromise.Thenable<T[Key]> | T[Key] }
       & { [P in Key as `obtain${Capitalize<string & Key>}`]?: never } 
-    | & { [P in Key as `obtain${Capitalize<string & Key>}`]: Obtainer<Thenable<T[Key]> | T[Key]> }
+    | & { [P in Key as `obtain${Capitalize<string & Key>}`]: Obtainer<xpromise.Thenable<T[Key]> | T[Key]> }
       & { [P in Key]?: never }
 type ApplyPropTransform<T> = { // Contravariance hack
     [P in string & keyof T]: (k: SelfPromiseOrObtainer<T, P>) => void
@@ -27,9 +26,9 @@ type Component<T> =
 // The props to be passed.
 export type AwaitProps<T> =
     & ({
-        for: Component<T> | Thenable<Component<T>>
+        for: Component<T> | xpromise.Thenable<Component<T>>
     } | {
-        obtainFor: Obtainer<Component<T> | Thenable<Component<T>>>
+        obtainFor: Obtainer<Component<T> | xpromise.Thenable<Component<T>>>
     })
     // Transform the props except children
     // reload is forced optional if present
@@ -42,9 +41,9 @@ export type AwaitProps<T> =
         | {
             children?:
                 | T['children']
-                | Thenable<T['children']>
+                | xpromise.Thenable<T['children']>
                 | {
-                    with?: T['children'] | Thenable<T['children']>
+                    with?: T['children'] | xpromise.Thenable<T['children']>
                     loader?: React.ReactNode
                     error?: React.ReactNode
                 }
@@ -52,7 +51,7 @@ export type AwaitProps<T> =
         | {
             obtainChildren: Obtainer<
                 | T['children']
-                | Thenable<T['children']>
+                | xpromise.Thenable<T['children']>
             >
             children?: T['children'] & {
                 loader?: React.ReactNode
@@ -143,9 +142,9 @@ export const Await = React.forwardRef(function Await<T, Ref>(
     const [entryPromises, _] = useCachedMap( 
         promises,
         (p, i) => p instanceof Promise
-            ? when.all([keys[i], p])
+            ? xpromise.all([keys[i], p])
             : [keys[i], p]
-    ) as [([string, any] | Thenable<[string, any]>)[], any]
+    ) as [([string, any] | xpromise.Thenable<[string, any]>)[], any]
     // Caching happens by position so this can fail if you manage to
     // rename a prop while passing the same value, provided that you don't
     // change the order of assignment. This is not documented because such

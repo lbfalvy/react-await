@@ -1,25 +1,42 @@
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
-import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import ts from 'rollup-plugin-ts';
+import dts from 'rollup-plugin-dts';
+import { dirname } from 'path';
 
 const pkg = require("./package.json")
 
-export default [{
+const baseConfig = {
     input: 'src/index.tsx',
+    preserveModules: true
+}
+
+export default [{
+    ...baseConfig,
     output: [{
-        file: pkg.main,
+        dir: dirname(pkg.main),
         format: 'cjs',
         sourcemap: 'inline'
     }, {
-        file: pkg.module,
+        dir: dirname(pkg.module),
         format: 'esm',
         sourcemap: 'inline'
     }],
     plugins: [
-        peerDepsExternal(),
+        peerDepsExternal(), // React
         ts(),
-        resolve(),
-        commonjs()
+        // resolve(),
+        commonjs(),
+        // replace({
+        //     'process.env.NODE_ENV': '"production"'
+        // }),
+        // terser()
     ]
+}, {
+    ...baseConfig,
+    output: {
+        dir: dirname(pkg.types),
+        format: 'esm'
+    },
+    plugins: [dts()]
 }]

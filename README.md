@@ -15,8 +15,11 @@ data fetching strategy. This component is far more general than that. I've
 successfully used it to wait for HTTP requests, particular websocket
 messages, WebRTC connections and user decisions, but it's usable for
 code-splitting and pretty much any use case when you want to render
-something from promises or obtainers. You can specify the target component
-inline, but to avoid nesting XML tags it's probably better to extract it. 
+something from promises or obtainers.
+
+Additionally, Await also solves the waterfall issue with SSR simply by
+motivating you to fetch data and components together. While this approach
+is slower than Suspense with Relay, it's a lot more modular and flexible.
 
 ## How to use it
 
