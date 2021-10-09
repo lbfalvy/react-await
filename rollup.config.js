@@ -7,7 +7,7 @@ import { dirname } from 'path';
 const pkg = require("./package.json")
 
 const baseConfig = {
-    input: 'src/index.tsx',
+    input: 'src/index.ts',
     preserveModules: true
 }
 
@@ -25,12 +25,7 @@ export default [{
     plugins: [
         peerDepsExternal(), // React
         ts(),
-        // resolve(),
         commonjs(),
-        // replace({
-        //     'process.env.NODE_ENV': '"production"'
-        // }),
-        // terser()
     ]
 }, {
     ...baseConfig,

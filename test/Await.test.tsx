@@ -1,7 +1,7 @@
 import { when, XPromise } from '@lbfalvy/when';
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { Await } from '../src/index';
+import { Await } from '../src/Await';
 import { Children, ShowString, TestWithReload } from './utils';
 
 test('only given properties', () => {

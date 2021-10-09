@@ -1,6 +1,7 @@
 import { applyWithCache } from "@lbfalvy/array-utils"
 import { Apply } from "@lbfalvy/array-utils/build/types/applyWithCache"
 import React from "react"
+import { useArray } from "@lbfalvy/react-utils"
 
 /**
  * React hook that imitates Array.map, it also caches the output so you
@@ -12,7 +13,7 @@ import React from "react"
 export function useCachedMap<T, U>(input: T[], map: (v: T, index: number) => U): [U[], () => void] {
     const cache = React.useRef<Apply<T, U>>(applyWithCache(map))
     // Ensure referential equality of the input array
-    input = React.useMemo(() => input, [input.length, ...input])
+    input = useArray(input)
     // Produce the results, optionally clear cache
     const generate = React.useCallback((clear: boolean = false) => {
         const apply = clear ? cache.current = applyWithCache(map) : cache.current
