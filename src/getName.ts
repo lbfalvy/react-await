@@ -5,9 +5,11 @@ export function getName(props: any): string {
         typeof props.for == 'function'
         || typeof props.for == 'object'
     ) {
-        const name = props.for.displayName ?? props.for.name
-            ?? props.for.default?.displayName ?? props.for.default?.name
+        const name = props.for.displayName
+            ?? props.for.name
+            ?? props.for.default?.displayName
+            ?? props.for.default?.name
         if (typeof name == 'string') return name
     }
-    return 'component'
+    return '[Component]'
 }

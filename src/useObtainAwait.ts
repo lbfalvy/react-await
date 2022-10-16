@@ -15,6 +15,14 @@ export type WithPromisesAndObtainers<T> = { // Contravariance hack
     [P in string & keyof T]: (k: infer I) => void
 }[string & keyof T] ? I : never
 
+/**
+ * This hook implements the main logic of the component
+ * 
+ * 1. Replace obtainers with their (cached) return value in the props
+ * 2. Await promises in the result (with cache in case you somehow ensure
+ *    the referential equality of the promise)
+ * 3. Constantly report all collected values as well as the overall status
+ */
 export function useObtainAwait<T extends {}>(
     data: WithPromisesAndObtainers<T> & {}
 ): [T, 'pending'|'ready'|'failed', () => void] {
@@ -27,9 +35,9 @@ export function useObtainAwait<T extends {}>(
     const [entryPromises, _] = useCachedMap( 
         promises,
         (p, i) => p instanceof Promise
-            ? all([keys[i], p])
-            : [keys[i], p]
-    ) as [([string, any] | Thenable<[string, any]>)[], any]
+            ? all([keys[i], p] as [string, any])
+            : [keys[i], p] as [string, any]
+    )
     // Caching happens by position so this can fail if you manage to
     // rename a prop while passing the same value, provided that you don't
     // change the order of assignment. This is not documented because such

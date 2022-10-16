@@ -1,8 +1,7 @@
 import { Thenable } from '@lbfalvy/when'
 import React from 'react'
-import { isForwardRef, isLazy, isMemo } from 'react-is'
-import { useChangingHandle } from '@lbfalvy/react-utils'
 import { Obtainer } from './executeObtainers'
+import { forwardRefWithHandle } from './forwardHandle'
 import { getName } from './getName'
 import { useObtainAwait, WithPromisesAndObtainers } from './useObtainAwait'
 
@@ -59,61 +58,48 @@ export type AwaitRef<T> =
 /**
  * Deal with promises in React the easy way
  */
-export const Await = React.forwardRef(function Await<T, Ref>(
-    props: AwaitProps<T>,
-    ref?: React.Ref<AwaitRef<Ref> | null | undefined> | null | undefined
-): React.ReactElement {
-    const propsCopy = {...props as any}
-    if ('children' in propsCopy
-        && typeof propsCopy.children == 'object'
-        && 'with' in propsCopy.children)
-        propsCopy.children = propsCopy.children.with
-    // <--
-    type WithoutChildren = Omit<T, 'reload'> & { for: Component<T> }
-    const [allAvailable, status, reload] = useObtainAwait<WithoutChildren>(propsCopy)
-    // Set up refs
-    const changeRef = useChangingHandle(ref)
-    changeRef?.({ reload })
-    let { for: component, ...finalProps } = allAvailable as {
-        for: Component<T>
+export const Await = forwardRefWithHandle(function Await(
+    originalProps: AwaitProps<any>, useForwardedRef, setHandle
+) {
+    // extract explicit loader and error from children if present
+    const awaitable = {...originalProps as any}
+    let loader: React.ReactNode | undefined
+    let error: React.ReactNode | undefined
+    if ('children' in awaitable
+        && typeof awaitable.children == 'object'
+        && 'with' in awaitable.children) {
+        loader = awaitable.children.loader
+        error = awaitable.children.error
+        awaitable.children = awaitable.children.with
     }
-    const Component: React.ComponentType<T> | undefined =
+    // await all remaining props
+    const [allAvailable, status, reload] = useObtainAwait(awaitable)
+    // initialise ref
+    setHandle?.({ reload })
+    // remove component from props
+    let { for: component, ...finalProps } = allAvailable as { for: any }
+    // if component is a module, use its default export, else assume it
+    // to be a component
+    const Component =
         typeof component == 'object' // not a function component
         && !(component instanceof React.Component) // nor class component
         && 'default' in component // has a default member
-        ? component.default
-        : component as React.ComponentType<T>
+        ? component.default as React.ComponentType<any>
+        : component as React.ComponentType<any>
+    // get forwarded ref
+    const ref = useForwardedRef(Component)
+    // render loader or error
     const ctx = React.useContext(awaitContext)
+    // ######## EARLY RETURNS ########
     if (status == 'failed') {
-        if (props.children && 'error' in props.children)
-            return <>{props.children.error}</>
+        if (error) return <>{error}</>
         return <ctx.error name={getName(allAvailable)} {...finalProps} />
     }
     if (status == 'pending') {
-        if (props.children && 'loader' in props.children)
-            return <>{props.children.loader}</>
+        if (loader) return <>{loader}</>
         return <ctx.loader name={getName(allAvailable)} {...finalProps} />
     }
-    // Forward ref properly
-    const shouldForwardRef =
-        typeof Component !== 'function' // If it's a class component
-            // or if it's one of these builtin components, which forward
-            // refs.
-            || isForwardRef(Component)
-            || isLazy(Component)
-            || isMemo(Component)
-    return <Component ref={changeRef && shouldForwardRef ? (r: Ref) => {
-        const refobj: { reload: () => void } = { reload }
-        // If it's a plain object, copy it.
-        if (Object.getPrototypeOf(r) === null)
-            changeRef({ ...refobj, ...r })
-        // If it's a class instance, subtype it.
-        else changeRef(Object.setPrototypeOf(refobj, r as any))
-        // We're making the assumption that all refs that have state are
-        // classes. This makes sense because the three common types of ref
-        // are Node, ReactComponent and imperative handles which are meant
-        // to be disposable objects that collect functions.
-    } : null} reload={reload} {...finalProps as T} />
+    return <Component ref={ref} reload={reload} {...finalProps} />
 }) as any as <T, Ref = {}>(
     props: AwaitProps<T> & {
         ref?: React.Ref<

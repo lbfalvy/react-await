@@ -31,9 +31,9 @@ export function executeObtainers(entries: [string, any][]): [[string, any][], ()
     })
     const [results, reload] = useCachedMap(funcs, f => f())
     const nameStart = 'obtain'.length
-    const resultNames = obtainerNames.map(
-        s => s[nameStart].toLowerCase()
-            + s.slice(nameStart + 1))
+    const resultNames = obtainerNames.map(s =>
+        s[nameStart].toLowerCase() + s.slice(nameStart + 1)
+    )
     return [[
         ...provided,
         ...zip(resultNames, results)
