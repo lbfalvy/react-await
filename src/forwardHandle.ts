@@ -93,7 +93,6 @@ export function forwardRefWithHandle<UpProps, Handle>(
             handle.current = newHandle
             updateRef()
         } : undefined
-        console.log("Rendering with", props)
         return render(props, useForwardedRef, setHandle)
     })
 }
