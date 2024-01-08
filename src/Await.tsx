@@ -1,20 +1,23 @@
-import { Thenable } from '@lbfalvy/when'
 import React from 'react'
-import { Obtainer } from './executeObtainers'
 import { forwardRefWithHandle } from './forwardHandle'
 import { getName } from './getName'
-import { useObtainAwait, WithPromisesAndObtainers } from './useObtainAwait'
+import { AwaitCore } from './AwaitCore'
+import { ExtObtainer, MaybePromise, parseProps, WithPromisesAndObtainers } from './props'
 
-type Component<T> =
+export type Comp<T> =
     | React.ComponentType<T>
     | { default: React.ComponentType<T> }
+
+export type ErrorReporter = (errors: Map<string, unknown>) => React.ReactNode;
 
 // The props to be passed.
 export type AwaitProps<T> =
     & ({
-        for: Component<T> | Thenable<Component<T>>
+        Comp: MaybePromise<Comp<T>>
+        f$Comp?: never
     } | {
-        obtainFor: Obtainer<Component<T> | Thenable<Component<T>>>
+        f$Comp: ExtObtainer<MaybePromise<Comp<T>>>
+        Comp?: never
     })
     // Transform the props except children
     // reload is forced optional if present
@@ -25,29 +28,24 @@ export type AwaitProps<T> =
     // Children is a special case to avoid nested XML tags if it isn't obtained.
     & ('children' extends keyof T ? (
         | {
-            children?:
-                | T['children']
-                | Thenable<T['children']>
+            children?: MaybePromise<T['children']>
                 | {
-                    with?: T['children'] | Thenable<T['children']>
+                    with?: MaybePromise<T['children']>
                     loader?: React.ReactNode
-                    error?: React.ReactNode
+                    error?: ErrorReporter
                 }
         }
         | {
-            obtainChildren: Obtainer<
-                | T['children']
-                | Thenable<T['children']>
-            >
+            f$children: ExtObtainer<MaybePromise<T['children']>>
             children?: T['children'] & {
                 loader?: React.ReactNode
-                error?: React.ReactNode
+                error?: ErrorReporter
             }
         }
     ) : {
         children?: {
             loader?: React.ReactNode
-            error?: React.ReactNode
+            error?: ErrorReporter
         }
     })
 
@@ -64,42 +62,66 @@ export const Await = forwardRefWithHandle(function Await(
     // extract explicit loader and error from children if present
     const awaitable = {...originalProps as any}
     let loader: React.ReactNode | undefined
-    let error: React.ReactNode | undefined
-    if ('children' in awaitable
-        && typeof awaitable.children == 'object'
-        && 'with' in awaitable.children) {
-        loader = awaitable.children.loader
-        error = awaitable.children.error
-        awaitable.children = awaitable.children.with
+    let error: ErrorReporter | undefined
+    if ('children' in awaitable && typeof awaitable.children == 'object') {
+        if ('with' in awaitable.children) {
+            loader = awaitable.children.loader
+            error = awaitable.children.error
+            awaitable.children = awaitable.children.with
+        }
     }
-    // await all remaining props
-    const [allAvailable, status, reload] = useObtainAwait(awaitable)
+    // construct core on first run, update on subsequent runs
+    const cRef = React.useRef<AwaitCore>();
+    if (cRef.current) cRef.current.update(parseProps(awaitable));
+    else cRef.current = new AwaitCore(parseProps(awaitable));
+    const core = cRef.current; // this never changes
+    const [status, setStatus] = React.useState(core.status());
+    // subscribe to state changes once
+    React.useLayoutEffect(() => {
+        return core.statusChange(() => {
+            // console.log("The state change got this far");
+            setStatus(core.status())
+        }, true)
+    }, [])
+    // // await all remaining props
+    // const [allAvailable, status, reload] = useObtainAwait(awaitable)
     // initialise ref
-    setHandle?.({ reload })
+    const [_, forceRerender] = React.useState({});
+    const reload = React.useCallback(() => {
+        core.reload();
+        forceRerender({});
+    }, []);
+    setHandle?.({ reload });
     // remove component from props
-    let { for: component, ...finalProps } = allAvailable as { for: any }
+    const { Comp, ...props } = core.props() as { Comp: any }
     // if component is a module, use its default export, else assume it
     // to be a component
     const Component =
-        typeof component == 'object' // not a function component
-        && !(component instanceof React.Component) // nor class component
-        && 'default' in component // has a default member
-        ? component.default as React.ComponentType<any>
-        : component as React.ComponentType<any>
+        typeof Comp == 'object' // not a function component
+        && !(Comp instanceof React.Component) // nor class component
+        && 'default' in Comp // has a default member
+        ? Comp.default as React.ComponentType<any>
+        : Comp as React.ComponentType<any>
     // get forwarded ref
     const ref = useForwardedRef(Component)
-    // render loader or error
+    // default loader or error
     const ctx = React.useContext(awaitContext)
-    // ######## EARLY RETURNS ########
-    if (status == 'failed') {
-        if (error) return <>{error}</>
-        return <ctx.error name={getName(allAvailable)} {...finalProps} />
+
+    // ######## EARLY RETURNS, NO HOOKS PAST THIS POINT ########
+    if (status === "ready") {
+        return <Component ref={ref} reload={reload} {...props} />
+    }
+    const name = getName(core.props());
+    if (status == "error") {
+        const errors = core.errors()!;
+        if (error) return <>{error(errors)}</>
+        return <ctx.error name={name} errors={errors} {...props} />
     }
     if (status == 'pending') {
         if (loader) return <>{loader}</>
-        return <ctx.loader name={getName(allAvailable)} {...finalProps} />
+        return <ctx.loader name={name} {...props} />
     }
-    return <Component ref={ref} reload={reload} {...finalProps} />
+    throw new Error("Invalid core status! (not ready/pending/error)");
 }) as any as <T, Ref = {}>(
     props: AwaitProps<T> & {
         ref?: React.Ref<
@@ -113,8 +135,14 @@ export const awaitContext = React.createContext({
     <div className='await await-loading'>
         Loading {name}...
     </div>,
-    error: ({ name }: { name: string }) =>
+    error: ({ name, errors }: { name: string, errors: Map<string, unknown> }) => 
     <div className='await await-failed'>
-        Failed to load {name}
+        Failed to load {name}. Errors:
+        <dl>
+            {[...errors].map(([key, error]) => <div key={key}>
+                <dt>{key}</dt>
+                <dd>{`${error}`}</dd>
+            </div>)}
+        </dl>
     </div>
 })

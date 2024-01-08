@@ -56,7 +56,10 @@ function fuseHandles<
  * support in Typescript, so it's usually easiest to use an `as any as T`
  * unsafe cast.
  */
-export function forwardRefWithHandle<UpProps, Handle>(
+export function forwardRefWithHandle<
+    UpProps,
+    Handle extends Record<string, any>
+>(
     render: (
         props: UpProps,
         useForwardedRef: (
@@ -90,6 +93,7 @@ export function forwardRefWithHandle<UpProps, Handle>(
         // Update the public-facing patch-on functions
         // if a ref was provided at all
         const setHandle = changeRef ? (newHandle: Handle) => {
+            if (handle.current === newHandle) return;
             handle.current = newHandle
             updateRef()
         } : undefined

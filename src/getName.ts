@@ -2,13 +2,13 @@ export function getName(props: any): string {
     if ('displayName' in props && typeof props.displayName == 'string')
         return props.displayName
     if (
-        typeof props.for == 'function'
-        || typeof props.for == 'object'
+        typeof props.Comp == 'function'
+        || typeof props.Comp == 'object'
     ) {
-        const name = props.for.displayName
-            ?? props.for.name
-            ?? props.for.default?.displayName
-            ?? props.for.default?.name
+        const name = props.Comp.displayName
+            ?? props.Comp.name
+            ?? props.Comp.default?.displayName
+            ?? props.Comp.default?.name
         if (typeof name == 'string') return name
     }
     return '[Component]'

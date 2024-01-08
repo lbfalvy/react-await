@@ -5,7 +5,7 @@ exports[`Async obtainer for component in module 1`] = `"foo"`;
 exports[`Async obtainer for component plain 1`] = `"foo"`;
 
 exports[`children obtained 1`] = `
-Array [
+[
   "foo",
   ";",
   "bar",
@@ -13,7 +13,7 @@ Array [
 `;
 
 exports[`children plain 1`] = `
-Array [
+[
   "foo",
   ";",
   "bar",
@@ -31,7 +31,7 @@ exports[`children promise 1`] = `
 `;
 
 exports[`children promise 2`] = `
-Array [
+[
   "foo",
   ";",
   "bar",
@@ -41,7 +41,7 @@ Array [
 exports[`children with custom loader 1`] = `"waiting for data..."`;
 
 exports[`children with custom loader 2`] = `
-Array [
+[
   "foo",
   ";",
   "bar",
@@ -60,11 +60,22 @@ exports[`promise rejects 1`] = `
 >
   Failed to load 
   ShowString
+  . Errors:
+  <dl>
+    <div>
+      <dt>
+        s
+      </dt>
+      <dd>
+        bar
+      </dd>
+    </div>
+  </dl>
 </div>
 `;
 
 exports[`promise resolves 1`] = `"bar"`;
 
-exports[`reload externally 1`] = `"3"`;
+exports[`reload externally 1`] = `"2"`;
 
-exports[`reload internally 1`] = `"3"`;
+exports[`reload internally 1`] = `"2"`;

@@ -1,31 +1,30 @@
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
-import commonjs from "@rollup/plugin-commonjs";
 import ts from 'rollup-plugin-ts';
-import dts from 'rollup-plugin-dts';
+import fs from "fs";
 import { dirname } from 'path';
 
-const pkg = require("./package.json")
+const pkg = JSON.parse(fs.readFileSync("./package.json"));
 
 const baseConfig = {
     input: 'src/index.ts',
-    preserveModules: true
 }
 
 export default [{
     ...baseConfig,
     output: [{
+        preserveModules: true,
         dir: dirname(pkg.main),
         format: 'cjs',
         sourcemap: 'inline'
     }, {
+        preserveModules: true,
         dir: dirname(pkg.module),
         format: 'esm',
         sourcemap: 'inline'
     }],
     plugins: [
         peerDepsExternal(), // React
-        ts(),
-        commonjs(),
+        ts({ tsconfig: "./tsconfig.json" }),
     ]
 }, {
     ...baseConfig,
@@ -33,5 +32,9 @@ export default [{
         dir: dirname(pkg.types),
         format: 'esm'
     },
-    plugins: [dts()]
+    plugins: [ts({ tsconfig: {
+        ...JSON.parse(fs.readFileSync("./tsconfig.json")).compilerOptions,
+        emitDeclarationOnly: true,
+        declaration: true
+    }, })]
 }]
