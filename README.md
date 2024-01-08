@@ -32,16 +32,16 @@ You can specify a custom loader and error by passing an object to children and u
 ## Examples
 
 ```tsx
-<Await for={MyComponent} one={1} f$two={[() => api.getTwo(), api]} f$three={globalFuncGet3} />
-<Await f$for={[() => import('./MyComponent.mjs')]} />
-<Await f$for={[() => customFetchComponent('MyComponent')]} />
-<Await for={MyComponent}>some children</Await>
-<Await for={MyComponent}>{{
+<Await Comp={MyComponent} one={1} f$two={[() => api.getTwo(), api]} f$three={globalFuncGet3} />
+<Await f$Comp={[() => import('./MyComponent.mjs')]} />
+<Await f$Comp={[() => customFetchComponent('MyComponent')]} />
+<Await Comp={MyComponent}>some children</Await>
+<Await Comp={MyComponent}>{{
   with: <>some children</>
   loader: <>Loading some parent...</>
   error: () => <FancyErrorMessage />
 }}</Await>
-<Await for={Chat} f$children={[() => fetchChildren()]}>{{
+<Await Comp={Chat} f$children={[() => fetchChildren()]}>{{
   loader: <Spinner />
   error: () => <Popup text='Failed to load messages' />
 }}</Await>
