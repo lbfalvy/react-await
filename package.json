@@ -1,6 +1,6 @@
 {
   "name": "@lbfalvy/react-await",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "A higher-order component to await all props before rendering your component",
   "keywords": [
     "react",

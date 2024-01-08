@@ -18,8 +18,8 @@ Pass it whatevver component you want to render once the data is ready in the `Co
 
 - The value itself under its own name
 - A promise under the value's name
-- A function that returns either the value or a promise to it, under the name `F$foo`. The function will be re-run whenever it changes.
-- An array containing a function on the first position followed by its   dependencies, under the name `F$foo`. The function will be re-run whenever the parameter list changes.
+- A function that returns either the value or a promise to it, under the name `f$foo`. The function will be re-run whenever it changes.
+- An array containing a function on the first position followed by its   dependencies, under the name `f$foo`. The function will be re-run whenever the parameter list changes.
 
 The above rules can also be applied to the `Comp` prop. In addition, if `Comp` turns out to be an object with the property `default`, that property is used instead. This serves to make code-splitting with ES modules easier.
 
@@ -32,16 +32,16 @@ You can specify a custom loader and error by passing an object to children and u
 ## Examples
 
 ```tsx
-<Await for={MyComponent} one={1} F$two={[() => api.getTwo(), api]} F$three={globalFuncGet3} />
-<Await F$for={[() => import('./MyComponent.mjs')]} />
-<Await F$for={[() => customFetchComponent('MyComponent')]} />
+<Await for={MyComponent} one={1} f$two={[() => api.getTwo(), api]} f$three={globalFuncGet3} />
+<Await f$for={[() => import('./MyComponent.mjs')]} />
+<Await f$for={[() => customFetchComponent('MyComponent')]} />
 <Await for={MyComponent}>some children</Await>
 <Await for={MyComponent}>{{
   with: <>some children</>
   loader: <>Loading some parent...</>
   error: () => <FancyErrorMessage />
 }}</Await>
-<Await for={Chat} F$children={[() => fetchChildren()]}>{{
+<Await for={Chat} f$children={[() => fetchChildren()]}>{{
   loader: <Spinner />
   error: () => <Popup text='Failed to load messages' />
 }}</Await>

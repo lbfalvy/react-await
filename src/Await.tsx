@@ -54,7 +54,13 @@ export type AwaitRef<T> =
     | T & { reload: () => void }
 
 /**
- * Deal with promises in React the easy way
+ * - resolve any promises in props
+ * - translate `f$prop={function}` into return value and cache by
+ * the function's identity
+ * - translate `f$prop={[function, ...deps]}` into return value and
+ * cache by the dep list.
+ * 
+ * For details, see the [project readme](https://github.com/lbfalvy/react-await)
  */
 export const Await = forwardRefWithHandle(function Await(
     originalProps: AwaitProps<any>, useForwardedRef, setHandle
