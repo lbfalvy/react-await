@@ -23,10 +23,12 @@ export class AwaitCore {
   private keys: Set<string> = new Set();
   public statusChange: Subscribe<[StatusChange]>;
   private emitStatusChange: Emit<[StatusChange]>;
+  public quiet = false;
 
   public constructor(
     props: Iterable<[string, PropDecl]>,
   ) {
+    this.quiet = true;
     [this.emitStatusChange, this.statusChange] = event();
     for (const [key, prop] of props) {
       this.keys.add(key);
@@ -36,9 +38,11 @@ export class AwaitCore {
         this.handleMaybePromise(key, value);
       } else this.handleMaybePromise(key, prop.value);
     }
+    this.quiet = false;
   }
 
   public update(props: Iterable<[string, PropDecl]>) {
+    this.quiet = true;
     const old_keys = this.keys;
     this.keys = new Set();
     for (const [key, { obtainer, value }] of props) {
@@ -59,6 +63,7 @@ export class AwaitCore {
         delete this.propsCache[key];
       }
     }
+    this.quiet = false;
   }
 
   public status(): AwaitStatus {
@@ -77,9 +82,11 @@ export class AwaitCore {
   }
 
   public reload() {
+    this.quiet = true;
     for (const [key, obtainer] of this.obtainers) {
       this.handleObtainer(key, undefined, obtainer);
     }
+    this.quiet = false;
   }
 
   private handleObtainer(key: string, prev: Obtainer|undefined, next: Obtainer) {
@@ -107,11 +114,11 @@ export class AwaitCore {
     if (prevPromise === promise) return;
     const status = promiseStatus(promise);
     this.setPromise(key, promise);
-    if (status == "pending") {
-      then(promise, status => {
-        this.onPromiseSettle(promise, status, this.emitStatusChange)
-      })
-    } else this.onPromiseSettle(promise, status, _ => { });
+    if (status === "pending") {
+      then(promise, status => this.onPromiseSettle(promise, status));
+    } else {
+      this.onPromiseSettle(promise, status);
+    }
   }
 
   /// Returns true if there were previously no errors
@@ -147,8 +154,7 @@ export class AwaitCore {
 
   private onPromiseSettle(
     promise: Promise<unknown>,
-    status: SettledStatus,
-    onStatusChange: (status: StatusChange) => void
+    status: SettledStatus
   ) {
     const [variant, payload] = status;
     const updated_keys = this.promiseCache.get(promise);
@@ -161,11 +167,11 @@ export class AwaitCore {
       succ: this.handleSuccess
     }[variant];
     for (const key of updated_keys) handle_inst(key, payload);
-    if (this.status() !== prev_status) {
+    if (this.status() !== prev_status && !this.quiet) {
       if (this.status() === "ready")
-        onStatusChange(["ready", this.props()!])
+        this.emitStatusChange(["ready", this.props()!])
       else if (this.status() === "error")
-        onStatusChange(["errors", this.errors()!]);
+        this.emitStatusChange(["errors", this.errors()!]);
     }
   }
 

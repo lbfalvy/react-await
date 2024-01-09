@@ -81,18 +81,18 @@ export const Await = forwardRefWithHandle(function Await(
     if (cRef.current) cRef.current.update(parseProps(awaitable));
     else cRef.current = new AwaitCore(parseProps(awaitable));
     const core = cRef.current; // this never changes
-    const [status, setStatus] = React.useState(core.status());
+    // const [status, setStatus] = React.useState(core.status());
     // subscribe to state changes once
+    const [_, forceRerender] = React.useState({});
     React.useLayoutEffect(() => {
         return core.statusChange(() => {
             // console.log("The state change got this far");
-            setStatus(core.status())
+            forceRerender({});
         }, true)
     }, [])
     // // await all remaining props
     // const [allAvailable, status, reload] = useObtainAwait(awaitable)
     // initialise ref
-    const [_, forceRerender] = React.useState({});
     const reload = React.useCallback(() => {
         core.reload();
         forceRerender({});
@@ -114,16 +114,16 @@ export const Await = forwardRefWithHandle(function Await(
     const ctx = React.useContext(awaitContext)
 
     // ######## EARLY RETURNS, NO HOOKS PAST THIS POINT ########
-    if (status === "ready") {
+    if (core.status() === "ready") {
         return <Component ref={ref} reload={reload} {...props} />
     }
     const name = getName(core.props());
-    if (status == "error") {
+    if (core.status() == "error") {
         const errors = core.errors()!;
         if (error) return <>{error(errors)}</>
         return <ctx.error name={name} errors={errors} {...props} />
     }
-    if (status == 'pending') {
+    if (core.status() == 'pending') {
         if (loader) return <>{loader}</>
         return <ctx.loader name={name} {...props} />
     }
