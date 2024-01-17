@@ -21,6 +21,13 @@ export class AwaitCore {
   private propsCache: Record<string, unknown> = {};
   private errorCache: Map<string, unknown> = new Map();
   private keys: Set<string> = new Set();
+  /** Event indicating that the status changed due to an async event.
+   * This assumes that the previous status was "pending",
+   * therefore the new status can never be "pending".
+   * 
+   * This is never fired when the change occurs due to an [update] or
+   * [reload]. After calling these functions, check the state manually.
+   */
   public statusChange: Subscribe<[StatusChange]>;
   private emitStatusChange: Emit<[StatusChange]>;
   public quiet = false;
